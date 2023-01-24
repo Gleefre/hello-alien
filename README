@@ -29,7 +29,7 @@ The precompiled executable is located in the app/jni/src folder (hello-alien).
 To compile it yourself:
 1) uncomment the first line in app/jni/src/hello-alien.c
 2) compile it with NDK clang (from app/jni/src folder):
-    $CC -o hello-alien hello-alien.c -lm -ldl -lsbcl -L../sbcl -Wl,--export-dynamic
+    $CC -o hello-alien hello-alien.c -lm -lsbcl -L../sbcl -rdynamic
 3) push the result onto your device
     adb push hello-alien /data/local/tmp
 4) push the core into the same folder (or copy it if you have compiled it yourself)
