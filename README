@@ -11,7 +11,7 @@ Right now it will work ARM64. It should be easy to do the same thing at least fo
 To use another CPU architecture:
 1) change the target ABI in app/build.gradle and app/jni/Application.mk
 2) compile sbcl as a shared library for android with required CPU architecture
-  (see my fork of sbcl for example)
+  (see my fork of sbcl for example: https://github.com/Gleefre/sbcl )
 3) run your newly built sbcl from adb shell to create a core from the file "lisp/hello-alien.lisp"
 4) copy libsbcl.so and alien.core to app/jni/sbcl/libsbcl.so and app/jni/core/libcore.so
 5) run ./gradlew
