@@ -1,0 +1,43 @@
+I'm trying to use SBCL as a shared library inside an android app.
+Current status: failure.
+
+This is a minimalistic application for android that should work, but it doesn't.
+
+Compilation:
+To compile an apk you just need to call "./gradlew" script.
+You should have some kind of java installed, but I have no idea what are the exact requirements.
+
+Right now it will work ARM64. It should be easy to do the same thing at least for X86-64.
+To use another CPU architecture:
+1) change the target ABI in app/build.gradle and app/jni/Application.mk
+2) compile sbcl as a shared library for android with required CPU architecture
+  (see my fork of sbcl for example)
+3) run your newly built sbcl from adb shell to create a core from the file "lisp/hello-alien.lisp"
+4) copy libsbcl.so and alien.core to app/jni/sbcl/libsbcl.so and app/jni/core/libcore.so
+5) run ./gradlew
+
+The app will just freeze, unfortunately.
+
+You can compile an executable to be run from adb shell.
+The precompiled executable is located in the app/jni/src folder (hello-alien).
+
+To compile it yourself:
+1) uncomment the first line in app/jni/src/hello-alien.c
+2) compile it with NDK clang (from app/jni/src folder):
+    $CC -o hello-alien hello-alien.c -lm -ldl -lsbcl -L../sbcl -Wl,--export-dynamic
+3) push the result onto your device
+    adb push hello-alien /data/local/tmp
+4) push the core into the same folder (or copy it if you have compiled it yourself)
+    adb push ../core/libcore.so /data/local/tmp/alien.core
+5) push the shared library:
+    adb push ../sbcl/libsbcl.so /data/local/tmp/libsbcl.so
+6) Connect to adb shell and:
+6.1) export LD_LIBRARY_PATH to point to the directory with libsbcl.so:
+    adb shell
+    cd /data/local/tmp
+    cd export LD_LIBRARY_PATH=$(pwd)
+6.2) and run the executable:
+    ./hello-alien
+
+It should print something like that:
+Alien: Hello alien world :/
