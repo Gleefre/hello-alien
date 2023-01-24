@@ -18,6 +18,11 @@ To use another CPU architecture:
 
 The app will just freeze, unfortunately.
 
+You can adjust the app to not use sbcl (to test that the problem is in it):
+In the file app/jni/src/hello-alien.c comment out the second line (with definition of FAKE).
+
+Then you should be able to see some kind of path on the screen.
+
 You can compile an executable to be run from adb shell.
 The precompiled executable is located in the app/jni/src folder (hello-alien).
 

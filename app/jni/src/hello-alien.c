@@ -1,4 +1,5 @@
 // #define SHELL
+// #define FAKE
 
 #ifdef SHELL
 #include <stdio.h>
@@ -31,8 +32,12 @@ Java_hi_to_alien_HelloAlien_setCorePath(JNIEnv *env, jobject thiz, jstring name)
 
 JNIEXPORT jstring JNICALL
 Java_hi_to_alien_HelloAlien_getAlien(JNIEnv *env, jobject thiz) {
+  #ifndef FAKE
   init(core_filename);
   return (*env)->NewStringUTF(env, hello());
+  #else
+  return (*env)->NewStringUTF(env, fake_hello());
+  #endif
 }
 #else
 int main(int argc, char **argv) {
