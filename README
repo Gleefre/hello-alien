@@ -4,7 +4,7 @@ Current status: failure.
 This is a minimalistic application for android that should work, but it doesn't.
 
 Compilation:
-To compile an apk you just need to call "./gradlew" script.
+To compile an apk you just need to call "./gradlew installDebug" script.
 You should have android sdk command line tools intalled (or I think so).
 You should have some kind of java installed (but I have no idea what are the exact requirements).
 
