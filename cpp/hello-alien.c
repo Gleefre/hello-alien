@@ -27,7 +27,7 @@ char* fake_hello() {
 #ifndef SHELL
 JNIEXPORT void JNICALL
 Java_hi_to_alien_HelloAlien_setCorePath(JNIEnv *env, jobject thiz, jstring name) {
-  core_filename = (*env)->GetStringUTFChars(env, name, NULL);
+  core_filename = strdup((*env)->GetStringUTFChars(env, name, NULL));
 }
 
 JNIEXPORT jstring JNICALL
