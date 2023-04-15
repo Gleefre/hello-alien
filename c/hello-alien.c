@@ -26,12 +26,12 @@ char* fake_hello() {
 
 #ifndef SHELL
 JNIEXPORT void JNICALL
-Java_hi_to_alien_HelloAlien_setCorePath(JNIEnv *env, jobject thiz, jstring name) {
+Java_hi_to_alien_HelloActivity_setCorePath(JNIEnv *env, jobject thiz, jstring name) {
   core_filename = strdup((*env)->GetStringUTFChars(env, name, NULL));
 }
 
 JNIEXPORT jstring JNICALL
-Java_hi_to_alien_HelloAlien_getAlien(JNIEnv *env, jobject thiz) {
+Java_hi_to_alien_HelloActivity_getAlien(JNIEnv *env, jobject thiz) {
   #ifndef FAKE
   init(core_filename);
   return (*env)->NewStringUTF(env, hello());
