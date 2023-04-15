@@ -1,0 +1,30 @@
+// See https://developer.android.com/build#module-level
+// Also see https://stackoverflow.com/questions/52020407/android-project-compiles-and-runs-without-module-level-build-gradle-is-it-right
+
+plugins {
+  id 'com.android.application' version '8.0.0'
+}
+
+android {
+  namespace 'hi.to.alien'
+
+  compileSdk 33
+
+  defaultConfig {
+    applicationId 'hi.to.alien'
+
+    minSdk 21
+    targetSdk 33
+
+    versionCode 1
+    versionName '1.0'
+  }
+
+  sourceSets {
+    main {
+      java.srcDir 'java'
+      manifest.srcFile 'AndroidManifest.xml'
+      jniLibs.srcDir 'libs'
+    }
+  }
+}
