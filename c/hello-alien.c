@@ -12,8 +12,6 @@
 extern int initialize_lisp(int argc, char **argv);
 char* (*hello)();
 
-char* core_filename = "alien.core";
-
 int init(char* core) {
   char *init_args[] = {"", "--core", core, "--noinform", "--disable-ldb"};
   if (initialize_lisp(5, init_args) != 0) return -1;
@@ -22,7 +20,7 @@ int init(char* core) {
 
 #ifdef FAKE
 char* fake_hello() {
-  return core_filename;
+  return "I'm an alien!.. (fake)";
 }
 #endif
 
@@ -30,7 +28,7 @@ char* fake_hello() {
 JNIEXPORT void JNICALL
 Java_hi_to_alien_HelloActivity_initLisp(JNIEnv *env, jobject thiz, jstring path) {
 #ifndef FAKE
-  core_filename = strdup((*env)->GetStringUTFChars(env, path, NULL));
+  char* core_filename = strdup((*env)->GetStringUTFChars(env, path, NULL));
   init(core_filename);
 #endif
 }
