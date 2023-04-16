@@ -1,20 +1,33 @@
 * Hello Alien
-I'm trying to use SBCL as a shared library inside an android app.
-Status: *not succeded*.
+In this project I attempt to use SBCL in an android application.
 
-This is a minimalistic application for android that should work, but it doesn't.
-** About SBCL on android
-I was able to compile SBCL on android with NDK (see https://github.com/Gleefre/sbcl).
-There is a script that fetches the repository and builds sbcl and copies ~libsbcl.so~
-automatically.
-** Setting up Android SDK, NDK, emulator.
-This section describes how to set up android sdk command line tools (without android studio).
+Status: *not (yet) succeeded*.
+
+** Design
+SBCL can be built as a shared library (see [[http://www.sbcl.org/all-news.html#2.1.10][SBCL news v2.1.10]]).
+It must be compiled using Android NDK (see [[https://github.com/Gleefre/sbcl][my fork of sbcl]]).
+
+~alien.lisp~ defines a function ~hello~ that simply returns one string.
+It exports it to the C wrapper with ~define-alien-callable~.
+
+The C wrapper ~hello-alien.c~ defines functions ~initLisp~ and ~getAlien~
+that are used from Java.
+
+Finally, the ~HelloActivity.java~ program defines the main activity for the app.
+It is a simple button. When you press it, the app loads the C wrapper,
+initializes lisp and calls ~getAlien~ that calls the lisp ~hello~ function,
+and prints the result as the text on the button.
+** What doesn't work
+The application proccess just dies when it tries to ~initialize_lisp~.
+** Setting up Android SDK & Android NDK & emulator.
+This section describes how to set up command line tools
+from the Android SDK without installing Android Studio.
 *** Download
-First, you need to download Android SDK from the Android Studio [[https://developer.android.com/studio][download page]], you
-can find the link for the download at the bottom.
+You need to download Android SDK from the Android Studio's [[https://developer.android.com/studio][download page]].
+The link is in the bottom of the page.
 
-After the extraction you will also need to restructure the folder (see the script below).
-This is because they are not bundled properly for some reason.
+After the extraction you will also need to restructure your folders.
+Command line tools are not bundled properly for some reason.
 
 The desired structure is
 #+BEGIN_SRC
@@ -22,12 +35,15 @@ The desired structure is
 ├── android-sdk
 │   └── cmdline-tools
 │   │   └── tools
+|   |   |   └── ...
 #+END_SRC
 
-This script might not work in the future if the download link will change.
-You might want to download the archive manually / replace the link.
+Here is a little script that might be useful.
+It automatically downloads and restructures the folders.
 #+BEGIN_SRC bash
   mkdir android-sdk && cd android-sdk
+  # This link might be broken in the future.
+  # Replace it or download the .zip archive manually
   wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
   unzip commandlinetools-linux-9477386_latest.zip
   rm commandlinetools-linux-9477386_latest.zip
@@ -37,106 +53,135 @@ You might want to download the archive manually / replace the link.
 #+END_SRC
 *** Environment variables
 Next step is to setup your environment variables.
-I use the following script (located in the parent folder of the ~android-sdk~ folder.
+
+Here is a script for that. (Call with ~source~.)
+It must be placed next to the ~android-sdk~ folder.
 #+BEGIN_SRC bash
   # setup.sh script
   unset $CDPATH
   SCRIPT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) >/dev/null 2>&1 && pwd)"
 
+  # These are required for command line tools.
   export ANDROID_HOME="$SCRIPT_DIR/android-sdk"
   export ANDROID_SDK_ROOT="$ANDROID_HOME"
+
+  # These tell emulator to store its data NOT in the $USER_HOME/.android folder.
+  # Unfortunately, some other tools will still store their data there.
   export ANDROID_USER_HOME="$SCRIPT_DIR/.android"
   export ANDROID_EMULATOR_HOME="$ANDROID_USER_HOME"
   export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
-  export NDK="$ANDROID_HOME/ndk/21.4.7075529"  # You might want to replace the version.
 
-  export PATH="$PATH:$ANDROID_HOME/cmdline-tools/tools/bin"
-  export PATH="$PATH:$ANDROID_HOME/platform-tools"
-  export PATH="$PATH:$ANDROID_HOME/emulator"
-  export PATH="$PATH:$ANDROID_HOME/build-tools/34.0.0-rc3"  # You might want to replace the version.
+  # Used by SBCL / C wrapper build scripts.
+  # SBCL doesn't work with NDK version 22 and higher.
+  export NDK="$ANDROID_HOME/ndk/21.4.7075529"
+
+  export PATH="$PATH:$ANDROID_HOME/cmdline-tools/tools/bin"  # sdkmanager and avdmanager
+  export PATH="$PATH:$ANDROID_HOME/platform-tools"  # adb
+  export PATH="$PATH:$ANDROID_HOME/emulator"  # emulator
+
+  # That sets up tools used during the build of the .apk file.
+  # You might want to replace the version.
+  export PATH="$PATH:$ANDROID_HOME/build-tools/34.0.0-rc3"
 #+END_SRC
 
 I also put it into my ~.bashrc~ file for conveniece.
 #+BEGIN_SRC bash
   # in your .bashrc
-  source "path/to/android-sdk-parent-folder/setup.sh"
+  source "path/to/the/setup.sh"
 #+END_SRC
 
-~ANDROID_USER_HOME~, ~ANDROID_EMULATOR_HOME~ and ~ANDROID_AVD_HOME~ are needed to
-prevend cmdline-tools from using ~$HOME/.android~ for some of their data, but I didn't
-track all of environment variables.
-
-~NDK~ variable is needed for building SBCL / hello-alien libarary.
-
-To install / find packages for android sdk use ~sdkmanager~ program.
-*** NDK
+To install / find packages for Android SDK use ~sdkmanager~ program.
+*** Needed packages
+You need to install ~platform-tools~, ~build-tools;30.0.3~ and ~platforms;android-33~
+packages from ~sdkmanager~:
 #+BEGIN_SRC bash
-  sdkmanager --install "ndk;21.4.7075529"  # You might want to replace the version.
+  sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;30.0.3"
 #+END_SRC
+*** NDK
+Install it with ~sdkmanager~:
+#+BEGIN_SRC bash
+  sdkmanager --install "ndk;21.4.7075529"
+#+END_SRC
+Later versions of NDK do not work with SBCL for some reason.
 *** Emulator
+Install it with ~sdkmanager~:
 #+BEGIN_SRC bash
   sdkmanager --install "emulator"
 #+END_SRC
-To run the emulator you need to create an /image/ first.
 
-Install needed packages:
+To run the emulator you need to create an /Android Virtual Device/ first.
+
+Install the needed packages with ~sdkmanager~:
 #+BEGIN_SRC bash
-  # of course you might want / need choose other versions
-  sdkmanager --install "system-images;android-33;google_apis;x86_64" "platforms;android-33"   
+  # You can choose other versions.
+  # The SDK version (33 here) must be the same.
+  # See sdkmanager --list
+  sdkmanager --install "system-images;android-33;google_apis;x86_64"
+  sdkmanager --install "platforms;android-33"   
 #+END_SRC
-Create the image:
+
+Create the AVD with ~avdmanager~:
 #+BEGIN_SRC bash
-  # You might want to use different device. To list possible devices:
-  # avdmanage list device
-  avdmanager -s create avd -f -n image -k "system-images;android-33;google_apis;x86_64" -p $ANDROID_AVD_HOME --device "pixel_4"
-  # You can choose another name after -n flag.
+  # You can use another name (-n flag).
+  # You can use different device (--device flag), list possible devices with
+  #   avdmanager list device
+  avdmanager -s create avd -f -n image \
+             -k "system-images;android-33;google_apis;x86_64" \
+             -p $ANDROID_AVD_HOME \
+             --device "pixel_4"
 #+END_SRC
-And run the emulator:
+
+Run the emulator:
 #+BEGIN_SRC bash
   emulator @image
 #+END_SRC
-And you can connect to shell with
+
+And you can connect to the shell:
 #+BEGIN_SRC bash
   adb shell
 #+END_SRC
-
-*** Build tools
-You might need to install various build tools to compile APK, but I'm not sure.
-#+BEGIN_SRC bash
-  sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;34.0.0-rc3"
-#+END_SRC
 ** Compiling the project
-Now that you have Android SDK, NDK, emulator installed, you can build this project itself.
 *** Additional requirements.
-There are two requirements for the build:
-- Java version 17 for the newest gradle (used as build system).
-- An android device connected through adb. You might use an [[Emulator][emulator]] instead.
-*** "Modules"
-- SBCL
-  ~libsbcl.so~ is already precompiled with ~SBCL 2.3.3~ and NDK ~21.4.7075529~.
-  You can compile it with ~make-sbcl.sh~ script.
-  An android device must be connected.
-- lisp program
-  The core ~alien.core~ must be compiled for the same sbcl you use.
-  If you compile the ~libsbcl.so~ yourself you can also compile the
-  lisp program with ~make-core.sh~ script.
-  An android device must be connected.
-- c program
-  The c program ~hello-alien.c~ needs to be linked against the same version of ~libsbcl.so~.
-  You can compile it with ~make-c.sh~ script.
-  An android device must be connected.
-- "all"
-  The script ~make-all.sh~ compiles all three previous "modules".
-*** Apk
-To compile apk you need to execute
+- Java version 17
+  It is needed for the gradle 8.1 (used as build system).
+- An android device connected by adb. You can use an emulator instead.
+  It is required to *build the lisp code (and SBCL) yourself*,
+  but it is not required to build the ~.apk~ file.
+*** .apk file
+To build the ~.apk~ file:
 #+BEGIN_SRC bash
 ./gradlew assembleDebug
 #+END_SRC
-To install use
+
+To install through adb:
 #+BEGIN_SRC bash
 ./gradlew installDebug
 #+END_SRC
-You can find the ~.apk~ file at ~build/outputs/apk~ folder.
+
+Or you can find the ~.apk~ file at ~build/outputs/apk~ folder.
+*** SBCL / CL code / C wrapper
+Use ~make-all.sh~ sript. You need to have exactly one android device / emulator
+connected through adb.
+
+To customize the build you will need to modify the following scripts:
+
+- SBCL
+  Compiled by ~make-sbcl.sh~ script.
+  It downloads the fork of the ~sbcl~, compiles it and puts ~libsbcl.so~
+  to the ~libs/$ABI~ folder.
+  
+  You can pass additional flags to the ~make-android.sh~ invocation
+  to customize SBCL build.
+  
+- CL code
+  Compiled by ~make-core.sh~ script.
+  The core ~alien.core~ must be compiled with the *same* sbcl as in ~libsbcl.so~.
+  
+- C wrapper
+  Compiled by ~make-c.sh~ script.
+
+  You can pass ~-DFAKE~ flag to the first invocation
+  to build a version that *doesn't* initialize lisp.
 *** Binary program for adb shell
 The ~make-c.sh~ script also compiles an executable that can be run in adb shell.
-You can run it with ~run-c.sh~ script (or manually, see the script for details). 
+Its precompiled version can be run with ~run-c.sh~ script.
