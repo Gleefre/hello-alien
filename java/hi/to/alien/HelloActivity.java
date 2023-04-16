@@ -1,9 +1,11 @@
 package hi.to.alien;
 
 import android.app.Activity;
-import android.widget.TextView;
 import android.os.Bundle;
 import android.util.Log;
+
+import android.view.View;
+import android.widget.Button;
 
 import java.io.File;
 
@@ -12,15 +14,22 @@ public class HelloActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    if (!initialized) {
-      initialized = true;
-      setupLisp("libcore.so");
-    }
+    Button button = new Button(this);
+    button.setText("Click to initialize lisp.");
 
-    TextView text = new TextView(this);
-    text.setText(getAlien());
+    button.setOnClickListener(new View.OnClickListener() {
+        private boolean initialized = false;
+        public void onClick(View view) {
+          if (!initialized) {
+            initialized = true;
+            System.loadLibrary("hello-alien");
+            setupLisp("libcore.so");
+            button.setText(getAlien());
+          }
+        }
+      });
 
-    setContentView(text);
+    setContentView(button);
   }
 
   public void setupLisp(String coreName) {
@@ -40,10 +49,4 @@ public class HelloActivity extends Activity {
 
   public native void initLisp(String path);
   public native String getAlien();
-  private static boolean initialized = false;
-
-  static {
-    System.loadLibrary("sbcl");
-    System.loadLibrary("hello-alien");
-  }
 }
