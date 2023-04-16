@@ -23,3 +23,7 @@ adb pull /data/local/tmp/alien.core
 # Move core to artifacts
 echo "Moving core to artifacts/$abi/alien.core"
 mv alien.core artifacts/$abi/alien.core
+
+# Copy as fake libcore.so
+echo "Copying to libs/$abi"
+cp artifacts/$abi/alien.core libs/$abi/libcore.so
