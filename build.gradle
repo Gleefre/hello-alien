@@ -27,4 +27,10 @@ android {
       jniLibs.srcDir 'libs'
     }
   }
+
+  packagingOptions {
+    jniLibs {
+      keepDebugSymbols.add '**/libcore.so'
+    }
+  }
 }
