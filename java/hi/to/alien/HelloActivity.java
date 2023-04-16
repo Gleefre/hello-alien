@@ -12,7 +12,10 @@ public class HelloActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    setupCore("libcore.so");
+    if (!initialized) {
+      initialized = true;
+      setupLisp("libcore.so");
+    }
 
     TextView text = new TextView(this);
     text.setText(getAlien());
@@ -20,7 +23,7 @@ public class HelloActivity extends Activity {
     setContentView(text);
   }
 
-  public void setupCore(String coreName) {
+  public void setupLisp(String coreName) {
     String corePath = getApplicationInfo().nativeLibraryDir;
     String coreFullName = corePath + "/" + coreName;
 
@@ -28,15 +31,16 @@ public class HelloActivity extends Activity {
 
     if (core.exists()) {
       Log.v("ALIEN", "Core file is at " +  coreFullName);
-      setCorePath(coreFullName);
-      Log.v("ALIEN", "Path to core is set to " + coreFullName);
+      initLisp(coreFullName);
+      Log.v("ALIEN", "Lisp initialised by core " + coreFullName);
     } else {
       Log.v("ALIEN", "Core is lost! 0.0");
     }
   }
 
+  public native void initLisp(String path);
   public native String getAlien();
-  public static native void setCorePath(String name);
+  private static boolean initialized = false;
 
   static {
     System.loadLibrary("sbcl");

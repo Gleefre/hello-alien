@@ -20,26 +20,31 @@ int init(char* core) {
   return 0;
 }
 
+#ifdef FAKE
 char* fake_hello() {
   return core_filename;
 }
+#endif
 
 #ifndef SHELL
 JNIEXPORT void JNICALL
-Java_hi_to_alien_HelloActivity_setCorePath(JNIEnv *env, jobject thiz, jstring name) {
-  core_filename = strdup((*env)->GetStringUTFChars(env, name, NULL));
+Java_hi_to_alien_HelloActivity_initLisp(JNIEnv *env, jobject thiz, jstring path) {
+#ifndef FAKE
+  core_filename = strdup((*env)->GetStringUTFChars(env, path, NULL));
+  init(core_filename);
+#endif
 }
 
 JNIEXPORT jstring JNICALL
 Java_hi_to_alien_HelloActivity_getAlien(JNIEnv *env, jobject thiz) {
-  #ifndef FAKE
-  init(core_filename);
+#ifndef FAKE
   return (*env)->NewStringUTF(env, hello());
-  #else
-  return (*env)->NewStringUTF(env, fake_hello());
-  #endif
-}
 #else
+  return (*env)->NewStringUTF(env, fake_hello());
+#endif
+}
+
+#else // SHELL
 int main(int argc, char **argv) {
   init("alien.core");
   printf("Alien: %s\n", hello());
