@@ -14,7 +14,7 @@ The C wrapper ~hello-alien.c~ defines functions ~initLisp~ and ~getAlien~
 that are used from Java.
 
 Finally, the ~HelloActivity.java~ program defines the main activity for the app.
-It is a simple button. When you press it, the app loads the C wrapper,
+It is just a button. When you press it, the app loads the C wrapper,
 initializes lisp and calls ~getAlien~ that calls the lisp ~hello~ function,
 and prints the result as the text on the button.
 ** What doesn't work
@@ -22,6 +22,8 @@ The application proccess just dies when it tries to ~initialize_lisp~.
 ** Setting up Android SDK & Android NDK & emulator.
 This section describes how to set up command line tools
 from the Android SDK without installing Android Studio.
+
+It requires some free space on the disk (about 2-5 GB).
 *** Download
 You need to download Android SDK from the Android Studio's [[https://developer.android.com/studio][download page]].
 The link is in the bottom of the page.
@@ -145,8 +147,8 @@ And you can connect to the shell:
 - Java version 17
   It is needed for the gradle 8.1 (used as build system).
 - An android device connected by adb. You can use an emulator instead.
-  It is required to *build the lisp code (and SBCL) yourself*,
-  but it is not required to build the ~.apk~ file.
+  It is required to build the lisp code (and SBCL) yourself,
+  but it is *not required to build the ~.apk~ file*.
 *** .apk file
 To build the ~.apk~ file:
 #+BEGIN_SRC bash
@@ -184,4 +186,4 @@ To customize the build you will need to modify the following scripts:
   to build a version that *doesn't* initialize lisp.
 *** Binary program for adb shell
 The ~make-c.sh~ script also compiles an executable that can be run in adb shell.
-Its precompiled version can be run with ~run-c.sh~ script.
+It has a precompiled version and can be run with ~run-c.sh~ script.
