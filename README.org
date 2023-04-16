@@ -19,6 +19,8 @@ initializes lisp and calls ~getAlien~ that calls the lisp ~hello~ function,
 and prints the result as the text on the button.
 ** What doesn't work
 The application proccess just dies when it tries to ~initialize_lisp~.
+
+Everything works with a standalone executable (that runs on android) though.
 ** Setting up Android SDK & Android NDK & emulator.
 This section describes how to set up command line tools
 from the Android SDK without installing Android Studio.
