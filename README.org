@@ -1,49 +1,142 @@
+* Hello Alien
 I'm trying to use SBCL as a shared library inside an android app.
-Current status: failure.
+Status: *not succeded*.
 
 This is a minimalistic application for android that should work, but it doesn't.
+** About SBCL on android
+I was able to compile SBCL on android with NDK (see https://github.com/Gleefre/sbcl).
+There is a script that fetches the repository and builds sbcl and copies ~libsbcl.so~
+automatically.
+** Setting up Android SDK, NDK, emulator.
+This section describes how to set up android sdk command line tools (without android studio).
+*** Download
+First, you need to download Android SDK from the Android Studio [[https://developer.android.com/studio][download page]], you
+can find the link for the download at the bottom.
 
-Compilation:
-To compile an apk you just need to call "./gradlew installDebug" script.
-You should have android sdk command line tools intalled (or I think so).
-You should have some kind of java installed (but I have no idea what are the exact requirements).
+After the extraction you will also need to restructure the folder (see the script below).
+This is because they are not bundled properly for some reason.
 
-Right now it will work ARM64. It should be easy to do the same thing at least for X86-64.
-To use another CPU architecture:
-1) change the target ABI in app/build.gradle and app/jni/Application.mk
-2) compile sbcl as a shared library for android with required CPU architecture
-  (see my fork of sbcl for example: https://github.com/Gleefre/sbcl )
-3) run your newly built sbcl from adb shell to create a core from the file "lisp/hello-alien.lisp"
-4) copy libsbcl.so and alien.core to app/jni/sbcl/libsbcl.so and app/jni/core/libcore.so
-5) run ./gradlew
+The desired structure is
+#+BEGIN_SRC
+.
+├── android-sdk
+│   └── cmdline-tools
+│   │   └── tools
+#+END_SRC
 
-The app will just freeze, unfortunately.
+This script might not work in the future if the download link will change.
+You might want to download the archive manually / replace the link.
+#+BEGIN_SRC bash
+  mkdir android-sdk && cd android-sdk
+  wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+  unzip commandlinetools-linux-9477386_latest.zip
+  rm commandlinetools-linux-9477386_latest.zip
+  mv cmdline-tools tools
+  mkdir cmdline-tools
+  mv tools cmdline-tools
+#+END_SRC
+*** Environment variables
+Next step is to setup your environment variables.
+I use the following script (located in the parent folder of the ~android-sdk~ folder.
+#+BEGIN_SRC bash
+  # setup.sh script
+  unset $CDPATH
+  SCRIPT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) >/dev/null 2>&1 && pwd)"
 
-You can adjust the app to not use sbcl (to test that the problem is in it):
-In the file app/jni/src/hello-alien.c comment out the second line (with definition of FAKE).
+  export ANDROID_HOME="$SCRIPT_DIR/android-sdk"
+  export ANDROID_SDK_ROOT="$ANDROID_HOME"
+  export ANDROID_USER_HOME="$SCRIPT_DIR/.android"
+  export ANDROID_EMULATOR_HOME="$ANDROID_USER_HOME"
+  export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
+  export NDK="$ANDROID_HOME/ndk/21.4.7075529"  # You might want to replace the version.
 
-Then you should be able to see some kind of path on the screen.
+  export PATH="$PATH:$ANDROID_HOME/cmdline-tools/tools/bin"
+  export PATH="$PATH:$ANDROID_HOME/platform-tools"
+  export PATH="$PATH:$ANDROID_HOME/emulator"
+  export PATH="$PATH:$ANDROID_HOME/build-tools/34.0.0-rc3"  # You might want to replace the version.
+#+END_SRC
 
-You can compile an executable to be run from adb shell.
-The precompiled executable is located in the app/jni/src folder (hello-alien).
+I also put it into my ~.bashrc~ file for conveniece.
+#+BEGIN_SRC bash
+  # in your .bashrc
+  source "path/to/android-sdk-parent-folder/setup.sh"
+#+END_SRC
 
-To compile it yourself:
-1) uncomment the first line in app/jni/src/hello-alien.c
-2) compile it with NDK clang (from app/jni/src folder):
-    $CC -o hello-alien hello-alien.c -lm -lsbcl -L../sbcl -rdynamic
-3) push the result onto your device
-    adb push hello-alien /data/local/tmp
-4) push the core into the same folder (or copy it if you have compiled it yourself)
-    adb push ../core/libcore.so /data/local/tmp/alien.core
-5) push the shared library:
-    adb push ../sbcl/libsbcl.so /data/local/tmp/libsbcl.so
-6) Connect to adb shell and:
-6.1) export LD_LIBRARY_PATH to point to the directory with libsbcl.so:
-    adb shell
-    cd /data/local/tmp
-    cd export LD_LIBRARY_PATH=$(pwd)
-6.2) and run the executable:
-    ./hello-alien
+~ANDROID_USER_HOME~, ~ANDROID_EMULATOR_HOME~ and ~ANDROID_AVD_HOME~ are needed to
+prevend cmdline-tools from using ~$HOME/.android~ for some of their data, but I didn't
+track all of environment variables.
 
-It should print something like that:
-Alien: Hello alien world :/
+~NDK~ variable is needed for building SBCL / hello-alien libarary.
+
+To install / find packages for android sdk use ~sdkmanager~ program.
+*** NDK
+#+BEGIN_SRC bash
+  sdkmanager --install "ndk;21.4.7075529"  # You might want to replace the version.
+#+END_SRC
+*** Emulator
+#+BEGIN_SRC bash
+  sdkmanager --install "emulator"
+#+END_SRC
+To run the emulator you need to create an /image/ first.
+
+Install needed packages:
+#+BEGIN_SRC bash
+  # of course you might want / need choose other versions
+  sdkmanager --install "system-images;android-33;google_apis;x86_64" "platforms;android-33"   
+#+END_SRC
+Create the image:
+#+BEGIN_SRC bash
+  # You might want to use different device. To list possible devices:
+  # avdmanage list device
+  avdmanager -s create avd -f -n image -k "system-images;android-33;google_apis;x86_64" -p $ANDROID_AVD_HOME --device "pixel_4"
+  # You can choose another name after -n flag.
+#+END_SRC
+And run the emulator:
+#+BEGIN_SRC bash
+  emulator @image
+#+END_SRC
+And you can connect to shell with
+#+BEGIN_SRC bash
+  adb shell
+#+END_SRC
+
+*** Build tools
+You might need to install various build tools to compile APK, but I'm not sure.
+#+BEGIN_SRC bash
+  sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;34.0.0-rc3"
+#+END_SRC
+** Compiling the project
+Now that you have Android SDK, NDK, emulator installed, you can build this project itself.
+*** Additional requirements.
+There are two requirements for the build:
+- Java version 17 for the newest gradle (used as build system).
+- An android device connected through adb. You might use an [[Emulator][emulator]] instead.
+*** "Modules"
+- SBCL
+  ~libsbcl.so~ is already precompiled with ~SBCL 2.3.3~ and NDK ~21.4.7075529~.
+  You can compile it with ~make-sbcl.sh~ script.
+  An android device must be connected.
+- lisp program
+  The core ~alien.core~ must be compiled for the same sbcl you use.
+  If you compile the ~libsbcl.so~ yourself you can also compile the
+  lisp program with ~make-core.sh~ script.
+  An android device must be connected.
+- c program
+  The c program ~hello-alien.c~ needs to be linked against the same version of ~libsbcl.so~.
+  You can compile it with ~make-c.sh~ script.
+  An android device must be connected.
+- "all"
+  The script ~make-all.sh~ compiles all three previous "modules".
+*** Apk
+To compile apk you need to execute
+#+BEGIN_SRC bash
+./gradlew assembleDebug
+#+END_SRC
+To install use
+#+BEGIN_SRC bash
+./gradlew installDebug
+#+END_SRC
+You can find the ~.apk~ file at ~build/outputs/apk~ folder.
+*** Binary program for adb shell
+The ~make-c.sh~ script also compiles an executable that can be run in adb shell.
+You can run it with ~run-c.sh~ script (or manually, see the script for details). 
