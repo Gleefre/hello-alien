@@ -199,6 +199,6 @@ To customize the build you will need to modify the following scripts:
 
   You can pass ~-DFAKE~ flag to the first invocation
   to build a version that *doesn't* initialize lisp.
-*** Binary program for adb shell
-The ~make-c.sh~ script also compiles an executable that can be run in adb shell.
-It has a precompiled version and can be run with ~run-c.sh~ script.
+*** Executable for adb shell
+It was removed to simplify the project.
+It remained untouched in the ~with-executable~ branch/

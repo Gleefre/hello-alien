@@ -18,12 +18,8 @@ adb shell rm -f /data/local/tmp/alien.core
 echo "Building core"
 adb push lisp/alien.lisp /data/local/tmp
 adb shell "cd /data/local/tmp ; ./sbcl/run-sbcl.sh --load alien.lisp";
-adb pull /data/local/tmp/alien.core
+adb pull /data/local/tmp/libcore.so
 
 # Move core to artifacts
-echo "Moving core to artifacts/$abi/alien.core"
-mv alien.core artifacts/$abi/alien.core
-
-# Copy as fake libcore.so
-echo "Copying to libs/$abi"
-cp artifacts/$abi/alien.core libs/$abi/libcore.so
+echo "Moving core to libs/$abi"
+mv alien.core libs/$abi/libcore.so

@@ -13,8 +13,4 @@ echo "Architecture $abi determined."
 
 CC=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/$uname_arch-linux-android21-clang
 
-# Library
 $CC -fPIC -shared -o libs/$abi/libhello-alien.so c/hello-alien.c -lm -llog -lsbcl -Llibs/$abi
-
-# Compile as shell app
-$CC -fPIC -rdynamic -o artifacts/$abi/hello-alien -DSHELL c/hello-alien.c -lm -llog -lsbcl -Llibs/$abi

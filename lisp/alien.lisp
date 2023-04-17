@@ -11,4 +11,4 @@
         (sb-alien:load-shared-object "libhello-alien.so"))
       *init-hooks*)
 
-(save-lisp-and-die "alien.core" :callable-exports '(hello))
+(save-lisp-and-die "libcore.so" :callable-exports '(hello))
