@@ -4,9 +4,9 @@ In this project I attempt to use SBCL in an android application.
 Status: *succeeded*. (Yay!)
 
 Huge thanks to karlosz, Shinmera, hayley and |3b| who
-helped me to debug the proble on ~#sbcl~ channel!
+helped me to debug the problem on the ~#sbcl~ channel!
 
-Thanks to fstamour for the idea.
+Also thanks to fstamour for the idea.
 
 You can check out the ~.apk~ in the ~artifacts~ folder.
 It works only on ~x86_64~ and ~arm64-v8a~ cpu and it is not signed
