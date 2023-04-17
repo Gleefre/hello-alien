@@ -10,7 +10,7 @@
 #include <string.h>
 
 extern int initialize_lisp(int argc, char **argv);
-char* (*hello)();
+__attribute__((visibility("default"))) char* (*hello)();
 
 int init(char* core) {
   char *init_args[] = {"", "--core", core, "--noinform", "--disable-ldb"};
