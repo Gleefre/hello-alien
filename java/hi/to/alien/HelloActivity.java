@@ -24,8 +24,8 @@ public class HelloActivity extends Activity {
             initialized = true;
             System.loadLibrary("hello-alien");
             setupLisp("libcore.so");
-            button.setText(getAlien());
           }
+          button.setText(getAlien());
         }
       });
 
