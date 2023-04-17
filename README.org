@@ -186,14 +186,11 @@ To customize the build you will need to modify the following scripts:
   Compiled by ~make-sbcl.sh~ script.
   It downloads the fork of the ~sbcl~, compiles it and puts ~libsbcl.so~
   to the ~libs/$ABI~ folder.
-  
   You can pass additional flags to the ~make-android.sh~ invocation
   to customize SBCL build.
-  
 - CL code
   Compiled by ~make-core.sh~ script.
   The core ~alien.core~ must be compiled with the *same* sbcl as in ~libsbcl.so~.
-  
 - C wrapper
   Compiled by ~make-c.sh~ script.
 
