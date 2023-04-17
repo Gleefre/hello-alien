@@ -1,7 +1,12 @@
 * Hello Alien
 In this project I attempt to use SBCL in an android application.
 
-Status: *not (yet) succeeded*.
+Status: *succeeded*. (Yay!)
+
+Huge thanks to karlosz, Shinmera, hayley and |3b| who
+helped me to debug the proble on ~#sbcl~ channel!
+
+Thanks to fstamour for the idea.
 
 ** Design
 SBCL can be built as a shared library (see [[http://www.sbcl.org/all-news.html#2.1.10][SBCL news v2.1.10]]).
@@ -17,10 +22,18 @@ Finally, the ~HelloActivity.java~ program defines the main activity for the app.
 It is just a button. When you press it, the app loads the C wrapper,
 initializes lisp and calls ~getAlien~ that calls the lisp ~hello~ function,
 and prints the result as the text on the button.
-** What doesn't work
-The application proccess just dies when it tries to ~initialize_lisp~.
-
+*** What didn't work
+The application proccess just died when it tries to ~initialize_lisp~.
 Everything works with a standalone executable (that runs on android) though.
+*** Why it didn't work
+SBCL tried initialize function ~hello~ that must be present in the C wrapper
+around the ~.core~ file, but couldn't find it.
+
+The problem was that SBCL looks for the symbol ~hello~ in the main process,
+which is the Java process instead of the C wrapper.
+
+The solution is to load the ~libhello-alien.so~ library during the startup,
+adding a simple lambda to the ~*init-hook*~.
 ** Setting up Android SDK & Android NDK & emulator.
 This section describes how to set up command line tools
 from the Android SDK without installing Android Studio.
