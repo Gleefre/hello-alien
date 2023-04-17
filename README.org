@@ -8,6 +8,10 @@ helped me to debug the proble on ~#sbcl~ channel!
 
 Thanks to fstamour for the idea.
 
+You can check out the ~.apk~ in the ~artifacts~ folder.
+(It works only on ~x86_64~ and ~arm64-v8a~ cpu, plus
+it is not signed so you might need ADB to install it.)
+
 ** Design
 SBCL can be built as a shared library (see [[http://www.sbcl.org/all-news.html#2.1.10][SBCL news v2.1.10]]).
 It must be compiled using Android NDK (see [[https://github.com/Gleefre/sbcl][my fork of sbcl]]).
