@@ -13,7 +13,7 @@ echo "Architecture $abi determined."
 
 # Remove previous core
 adb shell rm -f /data/local/tmp/alien.lisp
-adb shell rm -f /data/local/tmp/alien.core
+adb shell rm -f /data/local/tmp/libcore.so
 
 echo "Building core"
 adb push lisp/alien.lisp /data/local/tmp
@@ -22,4 +22,4 @@ adb pull /data/local/tmp/libcore.so
 
 # Move core to artifacts
 echo "Moving core to libs/$abi"
-mv alien.core libs/$abi/libcore.so
+mv libcore.so libs/$abi/libcore.so
