@@ -37,8 +37,7 @@
 (defparameter *clicks* 0)
 
 (define-alien-callable hello sb-alien:c-string ()
-  (format nil "Hello alien world! [clicks: ~a]"
-          (incf *clicks*)))
+  "HELLO")
 
 ;; SBCL will search for HELLO function in main program by default
 ;; Main program is Java program, so we need to load
