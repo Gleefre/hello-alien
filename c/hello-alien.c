@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern int initialize_lisp(int argc, char **argv);
 __attribute__((visibility("default"))) char* (*hello)();
@@ -18,7 +19,7 @@ Java_hi_to_alien_HelloActivity_initLisp(JNIEnv *env, jobject thiz, jstring path)
 
 JNIEXPORT jstring JNICALL
 Java_hi_to_alien_HelloActivity_getAlien(JNIEnv *env, jobject thiz) {
-  const char* hello_string = hello();
+  char* hello_string = hello();
   jstring java_hello_string = (*env)->NewStringUTF(env, hello_string);
   free(hello_string);
   return java_hello_string;
