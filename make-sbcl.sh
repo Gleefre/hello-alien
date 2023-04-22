@@ -19,10 +19,15 @@ else
     git clone https://github.com/Gleefre/sbcl.git -b with-dlsym-default sbcl-$abi
 fi
 
+# Setup libzstd for core compression
+mkdir -p sbcl-$abi/android-libs
+cp zstd-headers/* sbcl-$abi/android-libs/
+cp libs/$abi/libzstd.so sbcl-$abi/android-libs/
+
 # Building sbcl
 echo "Building sbcl."
 cd sbcl-$abi
-./make-android.sh
+./make-android.sh --fancy
 cd ..
 
 # Copy library to libs folder
