@@ -30,7 +30,7 @@ android {
 
   packagingOptions {
     jniLibs {
-      keepDebugSymbols.add '**/libcore.so'
+      keepDebugSymbols.add '**/lib*.so'
     }
   }
 }
