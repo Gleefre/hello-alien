@@ -45,7 +45,8 @@
 ;; the libhello-alien.so library at the startup.
 (push (lambda ()
         #+quicklisp (cffi:load-foreign-library 'liblog)
-        #+quicklisp (setf *debugger-hook* #'log-and-die))
+        #+quicklisp (setf *debugger-hook* #'log-and-die)
+        (sb-alien:load-shared-object "libhello-alien.so"))
       *init-hooks*)
 
 (save-lisp-and-die "libcore.so" :callable-exports '(hello)
