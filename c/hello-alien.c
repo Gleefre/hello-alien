@@ -1,22 +1,14 @@
-#include <jni.h>
 #include <string.h>
 
 extern int initialize_lisp(int argc, char **argv);
 __attribute__((visibility("default"))) char* (*hello)();
 
-int init(char* core) {
+__attribute__((visibility("default"))) char* hello_wrap() {
+  return (*hello)();
+}
+
+__attribute__((visibility("default"))) int init(char* core) {
   char *init_args[] = {"", "--core", core, "--noinform", "--disable-ldb"};
   if (initialize_lisp(5, init_args) != 0) return -1;
   return 0;
-}
-
-JNIEXPORT void JNICALL
-Java_hi_to_alien_HelloActivity_initLisp(JNIEnv *env, jobject thiz, jstring path) {
-  char* core_filename = strdup((*env)->GetStringUTFChars(env, path, NULL));
-  init(core_filename);
-}
-
-JNIEXPORT jstring JNICALL
-Java_hi_to_alien_HelloActivity_getAlien(JNIEnv *env, jobject thiz) {
-  return (*env)->NewStringUTF(env, hello());
 }

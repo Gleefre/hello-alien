@@ -22,7 +22,9 @@ public class HelloActivity extends Activity {
         public void onClick(View view) {
           if (!initialized) {
             initialized = true;
-            System.loadLibrary("hello-alien");
+            Log.v("ALIEN", "Starting");
+            System.loadLibrary("java-c");
+            Log.v("ALIEN", "And with library");
             setupLisp("libcore.so");
           }
           button.setText(getAlien());

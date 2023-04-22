@@ -1,26 +1,34 @@
 #include <jni.h>
 #include <string.h>
-#include <stdlib.h>
+#include <dlfcn.h>
 
-extern int initialize_lisp(int argc, char **argv);
-__attribute__((visibility("default"))) char* (*hello)();
+#include <android/log.h>
+#define TAG "ALIEN"
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,    TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,     TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,     TAG, __VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,    TAG, __VA_ARGS__)
 
-int init(char* core) {
-  char *init_args[] = {"", "--core", core, "--noinform", "--disable-ldb"};
-  if (initialize_lisp(5, init_args) != 0) return -1;
-  return 0;
-}
+void* hello_alien_handle;
+int (*init_here)(char*);
+char* (*hello_here)();
 
 JNIEXPORT void JNICALL
 Java_hi_to_alien_HelloActivity_initLisp(JNIEnv *env, jobject thiz, jstring path) {
+  LOGI("Here");
   char* core_filename = strdup((*env)->GetStringUTFChars(env, path, NULL));
-  init(core_filename);
+  LOGI("Got name");
+  hello_alien_handle = dlopen("libhello-alien.so", RTLD_GLOBAL | RTLD_NOW);
+  LOGI("Got handle");
+  LOGI("symbols before: %llu %llu", (unsigned long long) init_here, (unsigned long long) hello_here);
+  init_here = dlsym(hello_alien_handle, "init");
+  hello_here = dlsym(hello_alien_handle, "hello_wrap");
+  LOGI("symbols  after: %llu %llu", (unsigned long long) init_here, (unsigned long long) hello_here);
+  init_here(core_filename);
 }
 
 JNIEXPORT jstring JNICALL
 Java_hi_to_alien_HelloActivity_getAlien(JNIEnv *env, jobject thiz) {
-  char* hello_string = strdup(hello());
-  jstring java_hello_string = (*env)->NewStringUTF(env, hello_string);
-  free(hello_string);
-  return java_hello_string;
+  LOGI("symbols in get: %llu %llu", (unsigned long long) init_here, (unsigned long long) hello_here);
+  return (*env)->NewStringUTF(env, hello_here());
 }
