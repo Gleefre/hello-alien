@@ -16,7 +16,7 @@ if [ -d sbcl-$abi ];
 then
     echo "sbcl-$abi already exists."
 else
-    git clone https://github.com/Gleefre/sbcl.git sbcl-$abi
+    git clone https://github.com/Gleefre/sbcl.git -b with-dlsym-default sbcl-$abi
 fi
 
 # Building sbcl
