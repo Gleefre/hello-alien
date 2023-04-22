@@ -22,6 +22,7 @@ fi
 # Building sbcl
 echo "Building sbcl."
 cd sbcl-$abi
+echo '"ANDROID-WIP"' > version.lisp-expr
 ./make-android.sh
 cd ..
 
