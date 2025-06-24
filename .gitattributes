@@ -1,0 +1,7 @@
+gradle/** linguist-vendored
+gradlew linguist-vendored
+gradlew.bat linguist-vendored
+prebuilt/** linguist-vendored
+build-scripts/** -linguist-detectable
+settings.gradle -linguist-detectable
+build.gradle -linguist-detectable
