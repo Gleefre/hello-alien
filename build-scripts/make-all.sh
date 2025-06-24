@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-./make-sbcl.sh
-./make-core.sh
-./make-c.sh
+./build-scripts/make-env.sh
+./build-scripts/make-app.sh
 
-./gradlew assembleDebug
+# cp build/outputs/apk/debug/hello-alien-app-debug.apk prebuilt/apk/
+# ./gradlew installDebug
