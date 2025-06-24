@@ -2,19 +2,19 @@
 // Also see https://stackoverflow.com/questions/52020407/android-project-compiles-and-runs-without-module-level-build-gradle-is-it-right
 
 plugins {
-  id 'com.android.application' version '8.0.0'
+  id 'com.android.application' version '8.10.0'
 }
 
 android {
-  namespace 'hi.to.alien'
+  namespace = 'gleefre.hello.alien'
 
-  compileSdk 33
+  compileSdk = 36
 
   defaultConfig {
-    applicationId 'hi.to.alien'
+    applicationId 'gleefre.hello.alien'
 
-    minSdk 21
-    targetSdk 33
+    minSdk = 21
+    targetSdk = 36
 
     versionCode 1
     versionName '1.0'
@@ -22,9 +22,9 @@ android {
 
   sourceSets {
     main {
-      java.srcDir 'java'
-      manifest.srcFile 'AndroidManifest.xml'
-      jniLibs.srcDir 'libs'
+      java.srcDir 'src/java'
+      manifest.srcFile 'src/AndroidManifest.xml'
+      jniLibs.srcDir 'prebuilt/libs'
     }
   }
 
