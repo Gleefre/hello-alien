@@ -1,49 +1,88 @@
-* Hello Alien
-In this project I attempt to use SBCL in an android application.
+#+title: Hello Alien
+#+author: Gleefre
+#+email: varedif.a.s@gmail.com
+
+* About
+In this project I attempted to use SBCL in an android application.
 
 Status: *succeeded*. (Yay!)
 
-Huge thanks to karlosz, Shinmera, hayley and |3b| who
-helped me to debug the problem on the ~#sbcl~ channel!
+Huge thanks to karlosz, Shinmera, hayley and |3b| who helped me to debug
+problems on the ~#sbcl~ channel!
 
 Also thanks to fstamour for the idea.
 
-You can check out the ~.apk~ in the ~artifacts~ folder.
-It works only on ~x86_64~ and ~arm64-v8a~ cpu and it is not signed
-(but you still can install it without ADB).
+You can check out the ~.apk~ in the ~prebuilt/apk~ folder. It works only on
+~x86_64~ and ~arm64-v8a~ cpu and it is not signed (but you still can install it
+without ADB).
 
-** Design
-SBCL can be built as a shared library (see [[http://www.sbcl.org/all-news.html#2.1.10][SBCL news v2.1.10]]).
-It must be compiled using Android NDK (see [[https://github.com/Gleefre/sbcl][my fork of sbcl]]).
+See also [[https://github.com/Gleefre/simple-repl-app][Simple Repl App]] for a slightly bigger example.
+* Design
+SBCL can be built as a shared library (see [[http://www.sbcl.org/all-news.html#2.1.10][SBCL news v2.1.10]]). To use it as a
+part of an android app, it needs to be compiled using Android NDK, which can be
+done with ~make-android.sh~. (see [[http://www.sbcl.org/all-news.html#2.3.4][SBCL news v2.3.4]]).
 
-~alien.lisp~ defines a function ~hello~ that simply returns one string.
-It exports it to the C wrapper with ~define-alien-callable~.
+The source consists of a lisp file that gets compiled into a core on the target
+device, a C wrapper that allows Java to call into lisp, and a very simple Java
+frontend for the application.
+** Lisp side
+~alien.lisp~ defines a simple function (=hello=) that returns a string to be
+displayed by the Java frontend. This function is registered as an alien callback
+corresponding to a C function (=hello=) with =define-alien-callable= (see [[https://www.sbcl.org/manual/#Calling-Lisp-From-C][SBCL
+manual 9.8 Calling Lisp From C]]). The C symbol =hello= is contained in the C
+wrapper ~wrap.c~ (see below).
+** C side
+The C wrapper ~wrap.c~ defines Java native methods and the =hello= symbol to be
+used by the lisp callback. The native method =HelloActivity.initLisp= calls
+SBCL's =initialize_lisp=, while the =HelloActivity.getAlien= calls the =hello=
+function defined in ~alien.lisp~.
 
-The C wrapper ~hello-alien.c~ defines functions ~initLisp~ and ~getAlien~
-that are used from Java.
+The C wrapper also redirects the process stdout and stderr output streams to the
+android's logging facility that can be viewed with =adb logcat=. (See [[https://codelab.wordpress.com/2014/11/03/how-to-use-standard-output-streams-for-logging-in-android-apps/][this article]].)
+** Java side
+Finally, the Java frontend ~HelloActivity.java~ defines the main activity for
+the app. It is simple -- it shows a single button. When you press it, it calls
+the =getAlien= native method that calls the lisp =hello= function to get a
+string that is then set to be the button's text. When you press it for the first
+time, the app also loads the C wrapper and initializes lisp.
+* Problems
+** dlsym
+At first, the application proccess simply died when calling =initialize_lisp=.
+At the same time, the lisp initialization scheme worked for a standalone
+executable (running through =adb shell=).
 
-Finally, the ~HelloActivity.java~ program defines the main activity for the app.
-It is just a button. When you press it, the app loads the C wrapper,
-initializes lisp and calls ~getAlien~ that calls the lisp ~hello~ function,
-and prints the result as the text on the button.
-*** What didn't work
-The application proccess just died when it tries to ~initialize_lisp~.
-Everything works with a standalone executable (that runs on android) though.
-*** Why it didn't work
-SBCL tried initialize function ~hello~ that must be present in the C wrapper
-around the ~.core~ file, but couldn't find it.
+It turned out that when SBCL tried initialize the alien callable =hello= it
+couldn't find the corresponding foreign symbol. It was present in the
+~lib.gleefre.wrap.so~, but =dlsym= couldn't find it. When calling =dlsym= on the
+=*runtime-dlhandle*= which is a handle for the main program (the java process).
 
-The problem was that SBCL looks for the symbol ~hello~ in the main process,
-which is the Java process instead of the C wrapper.
+The solution is to load the =lib.gleefre.wrap.so= library during the startup,
+adding a lambda to the =*init-hooks*=, so that SBCL could find external symbols
+in the wrapper.
+** dlsym-2
+It later turned out that on older androids loading the wrapper library would
+load a second copy instead of finding the handle to the already loaded library.
 
-The solution is to load the ~libhello-alien.so~ library during the startup,
-adding a simple lambda to the ~*init-hook*~.
-** Setting up Android SDK & Android NDK & emulator.
-This section describes how to set up command line tools
-from the Android SDK without installing Android Studio.
+This was fixed by getting the handle in the wrapper, passing it to lisp through
+a custom pair of functions from an additional SBCL patch (=pass_pointer_to_lisp=
+and =get-pointer-from-c=) (see [[https://github.com/Gleefre/sbcl/tree/sbcl-android-upd-pptl][this branch from my fork of SBCL]]).
+** float-traps
+This is a problem mostly on x86_64 and not on arm64 (not sure why).
 
-It requires some free space on the disk (about 2-5 GB).
-*** Download
+When initializing, SBCL enables float traps. That being said, it doesn't disable
+them when =initialize_lisp= finishes. Most C libraries assume that float traps
+are disabled, which leads to crashes due to SIGFPE being signaled (this might
+happen, for example, in ~harfbuzz_ng.so~).
+
+The workaround is to disable float traps manually in the =*init-hooks*=. This
+means that float traps will be disabled in all of the lisp callbacks as well, so
+enabling them for the duration of the callback might be a good idea.
+* Setting up Android SDK & Android NDK & emulator.
+This section describes how to set up command line tools from the Android SDK
+without installing Android Studio.
+
+It requires quite a bit of free space on the disk (about 2-5 GB).
+** Download
 You need to download Android SDK from the Android Studio's [[https://developer.android.com/studio][download page]].
 The link is in the bottom of the page.
 
@@ -65,17 +104,17 @@ It automatically downloads and restructures the folders.
   mkdir android-sdk && cd android-sdk
   # This link might be broken in the future.
   # Replace it or download the .zip archive manually
-  wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-  unzip commandlinetools-linux-9477386_latest.zip
-  rm commandlinetools-linux-9477386_latest.zip
+  wget https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+  unzip commandlinetools-linux-13114758_latest.zip
+  rm commandlinetools-linux-13114758_latest.zip
   mv cmdline-tools tools
   mkdir cmdline-tools
   mv tools cmdline-tools
 #+END_SRC
-*** Environment variables
+** Environment variables
 Next step is to setup your environment variables.
 
-Here is a script for that. (Call with ~source~.)
+Here is a script for that. (To be loaded with =source=.)
 It must be placed next to the ~android-sdk~ folder.
 #+BEGIN_SRC bash
   # setup.sh script
@@ -93,8 +132,7 @@ It must be placed next to the ~android-sdk~ folder.
   export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
 
   # Used by SBCL / C wrapper build scripts.
-  # SBCL doesn't work with NDK version 22 and higher.
-  export NDK="$ANDROID_HOME/ndk/21.4.7075529"
+  export NDK="$ANDROID_HOME/ndk/28.1.13356709"
 
   export PATH="$PATH:$ANDROID_HOME/cmdline-tools/tools/bin"  # sdkmanager and avdmanager
   export PATH="$PATH:$ANDROID_HOME/platform-tools"  # adb
@@ -105,26 +143,25 @@ It must be placed next to the ~android-sdk~ folder.
   export PATH="$PATH:$ANDROID_HOME/build-tools/34.0.0-rc3"
 #+END_SRC
 
-I also put it into my ~.bashrc~ file for conveniece.
+You can also put it into ~.bashrc~ for conveniece.
 #+BEGIN_SRC bash
   # in your .bashrc
   source "path/to/the/setup.sh"
 #+END_SRC
 
 To install / find packages for Android SDK use ~sdkmanager~ program.
-*** Needed packages
-You need to install ~platform-tools~, ~build-tools;30.0.3~ and ~platforms;android-33~
-packages from ~sdkmanager~:
+** Needed packages
+You need to install ~platform-tools~, ~platforms;android-36~ and
+~build-tools;30.0.3~ packages from ~sdkmanager~:
 #+BEGIN_SRC bash
-  sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;30.0.3"
+  sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 #+END_SRC
-*** NDK
+** NDK
 Install it with ~sdkmanager~:
 #+BEGIN_SRC bash
-  sdkmanager --install "ndk;21.4.7075529"
+  sdkmanager --install "ndk;28.1.13356709"
 #+END_SRC
-Later versions of NDK do not work with SBCL for some reason.
-*** Emulator
+** Emulator
 Install it with ~sdkmanager~:
 #+BEGIN_SRC bash
   sdkmanager --install "emulator"
@@ -138,7 +175,7 @@ Install the needed packages with ~sdkmanager~:
   # The SDK version (33 here) must be the same.
   # See sdkmanager --list
   sdkmanager --install "system-images;android-33;google_apis;x86_64"
-  sdkmanager --install "platforms;android-33"   
+  sdkmanager --install "platforms;android-33"
 #+END_SRC
 
 Create the AVD with ~avdmanager~:
@@ -157,49 +194,96 @@ Run the emulator:
   emulator @image
 #+END_SRC
 
-And you can connect to the shell:
+And you can connect to the shell with ADB:
 #+BEGIN_SRC bash
   adb shell
 #+END_SRC
-** Compiling the project
-*** Additional requirements.
-- Java version 17
-  It is needed for the gradle 8.1 (used as build system).
-- An android device connected by adb. You can use an emulator instead.
-  It is required to build the lisp code (and SBCL) yourself,
-  but it is *not required to build the ~.apk~ file*.
-*** .apk file
-To build the ~.apk~ file:
+* Compiling the project
+*Note:* all build scripts must be called from the root of the project.
+** Requirements
+- Java version 21
+  It is needed for the gradle 8.14 (used as build system).
+- An android device connected with ADB. You can use an emulator instead.
+  It is required to build the c/lisp/java code yourself, but SBCL is already built.
+  You can forcefully recompile it by setting the SBCL_REBUILD env variable.
+** Simple
+Just run ~make-all.sh~ to build everything:
 #+BEGIN_SRC bash
+./build-scripts/make-all.sh
+#+END_SRC
+
+To only build the ~.apk~ file you can use ~make-java.sh~ or ~gradlew~. This does not
+require a connected android device.
+#+BEGIN_SRC bash
+./build-scripts/make-java.sh
+# or
 ./gradlew assembleDebug
 #+END_SRC
 
-To install through adb:
+If the SBCL is already present on the connected device, and ~libsbcl.so~ is copied to
+~prebuilt/libs~ together with other libraries used by SBCL, you can use ~make-app.sh~ to
+skip the compilation and copying of SBCL.
+#+BEGIN_SRC bash
+./build-scripts/make-app.sh
+#+END_SRC
+
+You can also use ~gradlew~ to install the apk via ADB on the connected device:
 #+BEGIN_SRC bash
 ./gradlew installDebug
 #+END_SRC
+** More control
+All build files are located in the ~build/~ directory, both those that are used by
+~gradle~ and those that aren't. At the same time, ~prebuilt/libs~ is used for native
+libraries to be included in the app, and ~libsbcl.so~, ~libzstd.so~, ~lib.gleefre.core.so~
+and ~lib.gleefre.wrap.so~ are copied there during the build process.
 
-Or you can find the ~.apk~ file at ~build/outputs/apk~ folder.
-*** SBCL / CL code / C wrapper
-Use ~make-all.sh~ sript. You need to have exactly one android device / emulator
-connected through adb.
-
-To customize the build you will need to modify the following scripts:
-
+The compilation steps are the following:
 - SBCL
-  Compiled by ~make-sbcl.sh~ script.
-  It downloads the fork of the ~sbcl~, compiles it and puts ~libsbcl.so~
-  to the ~libs/$ABI~ folder.
-  You can pass additional flags to the ~make-android.sh~ invocation
-  to customize SBCL build.
-- CL code
-  Compiled by ~make-core.sh~ script.
-  The core ~alien.core~ must be compiled with the *same* sbcl as in ~libsbcl.so~.
-- C wrapper
-  Compiled by ~make-c.sh~ script.
 
-  You can pass ~-DFAKE~ flag to the first invocation
-  to build a version that *doesn't* initialize lisp.
-*** Executable for adb shell
-It was removed to simplify the project.
-It remained untouched in the ~with-executable~ branch/
+  First the SBCL is compiled and copied over to the device. This is done by the
+  ~build-scripts/make-sbcl.sh~ script. It automatically detects if a prebuilt SBCL exists,
+  in which case it only takes care of copying shared libraries used by SBCL to
+  ~prebuilt/libs~ and copying SBCL to the device.
+
+  When compiling SBCL, the ~sbcl-android-upd-pptl~ branch of my fork is used.
+
+  The shared libraries and headers from ~prebuilt/sbcl-android-libs~ are copied to
+  ~android-libs~. This includes ~libzstd~ (can be compiled with [[https://github.com/Gleefre/android-build-libzstd][this script]]) and its
+  headers that are used for ~sb-core-compression~. You can also compile other libraries
+  for SBCL to use and put them there; namely ~libgmp~, ~libmpfr~, and ~libcapstone~ for
+  the corresponding sbcl contribs.
+- Core
+
+  Then the lisp code is compiled and saved into a non-executable core. This is done by the
+  ~build-scripts/make-core.sh~ script. This requires SBCL to be installed on the connected
+  android device.
+- C
+
+  The the C wrapped is compiled into a shared library and copied to ~prebuilt/libs~. This
+  is done by the ~build-scripts/make-c.sh~ script. This does not require a connected
+  android device.
+
+  Requires the ~NDK~ environment variable to be set.
+- Java (.apk file)
+
+  The the Java frontend is compiled with ~gradlew~ into an apk that also includes all
+  shared libraries from ~prebuilt/libs~. This is done by the ~build-scripts/make-jave.sh~
+  script. This does not require a connected android device.
+* Bugs & Contributions
+  Feel free to report bugs or make suggestions by filing an issue on github.
+
+  Feel free to submit pull requests on github as well.
+* License
+  Copyright 2023-2025 Gleefre
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
