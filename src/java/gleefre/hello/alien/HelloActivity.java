@@ -1,4 +1,4 @@
-package hi.to.alien;
+package gleefre.hello.alien;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -22,8 +22,8 @@ public class HelloActivity extends Activity {
         public void onClick(View view) {
           if (!initialized) {
             initialized = true;
-            System.loadLibrary("hello-alien");
-            setupLisp("libcore.so");
+            System.loadLibrary(".gleefre.wrap");
+            setupLisp("lib.gleefre.core.so");
           }
           button.setText(getAlien());
         }
@@ -39,11 +39,11 @@ public class HelloActivity extends Activity {
     File core = new File(corePath, coreName);
 
     if (core.exists()) {
-      Log.v("ALIEN", "Core file is at " +  coreFullName);
+      Log.v("ALIEN/GLEEFRE/JAVA", "Core file is at " +  coreFullName);
       initLisp(coreFullName);
-      Log.v("ALIEN", "Lisp initialised by core " + coreFullName);
+      Log.v("ALIEN/GLEEFRE/JAVA", "Lisp initialised by core " + coreFullName);
     } else {
-      Log.v("ALIEN", "Core is lost! 0.0");
+      Log.v("ALIEN/GLEEFRE/JAVA", "Core is lost! 0.0");
     }
   }
 
