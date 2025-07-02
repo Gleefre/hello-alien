@@ -7,11 +7,12 @@ elif [ -z "$DIR" ]; then
     DIR=sbcl-pack
 fi
 
-mkdir -p android-libs
 mkdir -p "$DIR/obj"
 mkdir -p "$DIR/output"
 mkdir -p "$DIR/src/runtime"
-cp -r android-libs "$DIR"
+if [ -d output/android-libs ]; then
+    cp -r output/android-libs "$DIR/output"
+fi
 cp src/runtime/sbcl src/runtime/libsbcl.so "$DIR/src/runtime"
 cp output/sbcl.core "$DIR/output"
 cp -r obj/sbcl-home "$DIR/obj"
