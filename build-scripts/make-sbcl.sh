@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+. build-scripts/config.sh
+
 # Determine target ABI
 if [ -n "$1" ]; then
     ABI=$1
@@ -20,10 +22,12 @@ echo "Determined target $ABI."
 sbcl_dir=build/external/sbcl-android-pptl-build-$ABI
 pack_name=sbcl-android-pptl-$ABI
 jni_libs=prebuilt/libs/$ABI
-adb_sbcl_dir=/data/local/tmp/sbcl
+adb_sbcl_dir="$APP_HOME_DIR"/sbcl
 
 # Ensure build directory exists
 mkdir -p build/external
+mkdir -p prebuilt/sbcl
+mkdir -p "$jni_libs"
 
 # Clean (adb)
 echo "Deleting $adb_sbcl_dir on the target device."
@@ -38,7 +42,8 @@ if [ -z "$SBCL_REBUILD" ]; then
         fi
 
         # Copy files to android
-        adb push build/external/"$pack_name"/ "$adb_sbcl_dir"/
+        ( cd build/external/"$pack_name";
+          adb push ./ "$adb_sbcl_dir")
 
         # Copy libsbcl.so to prebuilt/libs folder, as well as libraries from android-libs
         echo "Copying build/external/$pack_name/src/runtime/libsbcl.so to $jni_libs."
@@ -59,7 +64,7 @@ then
     echo "Cleaning $sbcl_dir."
 
     ( cd "$sbcl_dir";
-      git fetch all;
+      git fetch --all;
       git checkout sbcl-android-upd-pptl-2;
       ./clean.sh;
       if [ -d android-libs ]; then rm -r android-libs; fi

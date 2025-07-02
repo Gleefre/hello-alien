@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+. build-scripts/config.sh
+
 # Check for NDK
 if [ -z $NDK ] || [ ! -d $NDK ]; then
     echo "Can't find Android NDK, please set the $NDK environment variable."
@@ -35,5 +37,5 @@ HOST_TAG=linux-x86_64
 TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
 CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
 
-echo $CC -fPIC -shared -o prebuilt/libs/$ABI/lib.gleefre.wrap.so src/c/wrap.c -lsbcl -llog -Lprebuilt/libs/$ABI
-$CC -fPIC -shared -o prebuilt/libs/$ABI/lib.gleefre.wrap.so src/c/wrap.c -lsbcl -llog -Lprebuilt/libs/$ABI
+echo $CC -fPIC -shared -o prebuilt/libs/$ABI/"$APP_LIB_WRAPPER_NAME" src/c/wrap.c -lsbcl -llog -Lprebuilt/libs/$ABI
+$CC -fPIC -shared -o prebuilt/libs/$ABI/"$APP_LIB_WRAPPER_NAME" src/c/wrap.c -lsbcl -llog -Lprebuilt/libs/$ABI

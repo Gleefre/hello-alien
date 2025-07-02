@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+. build-scripts/config.sh
+
 # Determine target ABI
 if [ -n "$1" ]; then
     ABI=$1
@@ -16,22 +18,20 @@ elif [ -z "$ABI" ]; then
 fi
 echo "Determined target $ABI."
 
-lisp_dir=hello-alien
-lisp_entry=alien.lisp
-lisp_core=lib.gleefre.core.so
 jni_libs=prebuilt/libs/$ABI
 
 # Clean core and lisp source (adb)
-adb shell rm -rf /data/local/tmp/"$lisp_dir"
-adb shell rm -f /data/local/tmp/"$lisp_core"
+adb shell rm -rf "$APP_HOME_DIR"/lisp
+adb shell rm -f "$APP_HOME_DIR"/"$APP_LISP_CORE_NAME"
 
 # Push lisp source
-adb push src/lisp/ /data/local/tmp/"$lisp_dir"/
+( cd src/lisp;
+  adb push ./ "$APP_HOME_DIR"/lisp )
 
 # Build core
 echo "Building core"
-adb shell "cd /data/local/tmp ; export HOME=\$(pwd) ; sh sbcl/run-sbcl.sh --load $lisp_dir/$lisp_entry";
+adb shell "cd \"$APP_HOME_DIR\"; HOME=\"\$(pwd)\" sh sbcl/run-sbcl.sh --load \"lisp/$APP_LISP_ENTRY\"";
 
 # Copy core into prebuilt/libs
-echo "Copying $lisp_core to $jni_libs"
-adb pull /data/local/tmp/"$lisp_core" "$jni_libs"
+echo "Copying $APP_LISP_CORE_NAME to $jni_libs"
+adb pull "$APP_HOME_DIR"/"$APP_LISP_CORE_NAME" "$jni_libs"
