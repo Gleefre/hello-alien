@@ -30,7 +30,7 @@ adb push src/lisp/ /data/local/tmp/"$lisp_dir"/
 
 # Build core
 echo "Building core"
-adb shell "cd /data/local/tmp ; export HOME=\$(pwd) ; ./sbcl/run-sbcl.sh --load $lisp_dir/$lisp_entry";
+adb shell "cd /data/local/tmp ; export HOME=\$(pwd) ; sh sbcl/run-sbcl.sh --load $lisp_dir/$lisp_entry";
 
 # Copy core into prebuilt/libs
 echo "Copying $lisp_core to $jni_libs"
