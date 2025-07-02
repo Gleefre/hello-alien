@@ -10,7 +10,7 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 
-extern int initialize_lisp(int argc, char **argv);
+extern int initialize_lisp(int argc, char **argv, char **envp);
 extern void pass_pointer_to_lisp(void* pointer);
 
 __attribute__((visibility("default"))) char* (*hello)();
@@ -62,7 +62,7 @@ int init(char* core) {
   void* self_handle = dlopen("lib.gleefre.wrap.so", RTLD_NOLOAD | RTLD_GLOBAL);
   if (self_handle == NULL) return -2;
   pass_pointer_to_lisp(self_handle);
-  if (initialize_lisp(5, init_args) != 0) return -1;
+  if (initialize_lisp(5, init_args, NULL) != 0) return -1;
   return 0;
 }
 
