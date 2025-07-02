@@ -25,6 +25,7 @@ android {
       java.srcDir 'src/java'
       manifest.srcFile 'src/AndroidManifest.xml'
       jniLibs.srcDir 'prebuilt/libs'
+      res.srcDir 'res'
     }
   }
 
