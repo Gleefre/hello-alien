@@ -59,6 +59,7 @@ then
     echo "Cleaning $sbcl_dir."
 
     ( cd "$sbcl_dir";
+      git fetch all;
       git checkout sbcl-android-upd-pptl-2;
       ./clean.sh;
       if [ -d android-libs ]; then rm -r android-libs; fi
@@ -67,6 +68,10 @@ then
 else
     echo "Cloning SBCL into $sbcl_dir."
     git clone https://github.com/Gleefre/sbcl.git -b sbcl-android-upd-pptl-2 "$sbcl_dir"
+    # fetch tags for git describe
+    (cd "$sbcl_dir";
+     git remote add sbcl https://github.com/sbcl/sbcl.git;
+     git fetch sbcl --tags)
 fi
 
 # Setup android-libs
@@ -76,8 +81,7 @@ cp -r prebuilt/sbcl-android-libs "$sbcl_dir"/android-libs
 # Build
 echo "Building SBCL."
 ( cd "$sbcl_dir";
-  echo '"2.5.6-android"' > version.lisp-expr;
-  ./make-android.sh --fancy --android-target-location="$adb_sbcl_dir" )
+  SBCL_BUILDING_RELEASE_FROM=HEAD ./make-android.sh --fancy --android-target-location="$adb_sbcl_dir" )
 
 # Pack
 echo "Packing SBCL into $pack_name."
