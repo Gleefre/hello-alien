@@ -12,12 +12,19 @@
         ;; with pass_pointer_to_lisp and retrieve it with get-pointer-from-c.
         ;; So instead of simple (sb-alien:load-shared-object "lib.gleefre.wrap.so")
         ;; we need to manually add it into the internals of sbcl.
-        (push (sb-alien::make-shared-object
-               :pathname (pathname "lib.gleefre.wrap.so")
-               :namestring "lib.gleefre.wrap.so"
-               :handle (sb-alien::get-pointer-from-c)
-               :dont-save t)
-              sb-alien::*shared-objects*)
+
+        ;; This is only needed to support older devices, running android 10 or lower.
+        ;; Otherwise you can use this:
+        #+nil (sb-alien:load-shared-object "lib.gleefre.wrap.so" :dont-save T)
+        (sb-int:with-system-mutex (sb-alien::*shared-objects-lock*)
+          (push (sb-alien::make-shared-object
+                 :pathname (pathname "lib.gleefre.wrap.so")
+                 :namestring "lib.gleefre.wrap.so"
+                 :handle (sb-alien::get-pointer-from-c)
+                 :dont-save t)
+                sb-alien::*shared-objects*)
+          (sb-sys:update-alien-linkage-table nil))
+
         ;; SBCL enables float traps at startup, but doesn't disable them when
         ;; initalize_lisp returns. So we do it here ourselves. Note: It might be
         ;; better to use sb-int:set-floating-point-modes.
